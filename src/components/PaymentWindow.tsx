@@ -1,6 +1,9 @@
 "use client";
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { sepolia } from "viem/chains";
+import WalletModal from "./WalletModal";
 
 // KG 이니시스 스타일 결제 모달 (정적 데모)
 // - TailwindCSS 기준
@@ -22,7 +25,26 @@ export default function PaymentWindow({
   const allAgreed = agreeA && agreeB;
   const canProceed = allAgreed && !!method;
 
+  // 지갑 상태
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string>("");
+  const [privateKey, setPrivateKey] = useState<string>("");
+
   const formattedPrice = useMemo(() => price.toLocaleString("ko-KR"), [price]);
+
+  const generateWallet = () => {
+    try {
+      const privateKey = generatePrivateKey();
+      const account = privateKeyToAccount(privateKey);
+
+      setPrivateKey(privateKey);
+      setWalletAddress(account.address);
+      setShowWalletModal(true);
+    } catch (error) {
+      console.error("지갑 생성 중 오류:", error);
+      alert("지갑 생성에 실패했습니다.");
+    }
+  };
 
   const methodsRow1 = [
     {
@@ -65,9 +87,10 @@ export default function PaymentWindow({
             {/* 상단 바 */}
             <div className="mb-4 flex items-center justify-between">
               <div className="text-xl font-semibold tracking-tight">
-                <span className="text-[#2c3e50]">Code</span>
-                <span className="text-[#3498db]">M</span>
-                <span className="text-[#2c3e50]">Shop</span>
+                <span className="rounded-md bg-blue-500 px-2 py-1 text-white">
+                  PayStation
+                </span>{" "}
+                <span className="text-[#e74c3c]">Demo</span>
               </div>
               <p className="text-xs text-gray-500">
                 안전하고 편리한 이니시스결제입니다.
@@ -93,7 +116,7 @@ export default function PaymentWindow({
                 <span className="ml-auto text-[11px] text-gray-500">
                   전자금융거래 이용약관
                 </span>
-                <label className="flex items-center gap-1">
+                <label className="flex items-center gap-1 text-black">
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded border-gray-300"
@@ -105,7 +128,7 @@ export default function PaymentWindow({
                 <span className="text-[11px] text-gray-500">
                   개인정보의 수집 및 이용안내
                 </span>
-                <label className="flex items-center gap-1">
+                <label className="flex items-center gap-1 text-black">
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded border-gray-300"
@@ -219,6 +242,7 @@ export default function PaymentWindow({
 
             <button
               disabled={!canProceed}
+              onClick={generateWallet}
               className={`mt-6 w-full rounded-xl bg-white px-6 py-4 text-lg font-semibold transition ${
                 canProceed
                   ? "text-[#e74c3c] hover:opacity-90"
@@ -229,6 +253,13 @@ export default function PaymentWindow({
             </button>
           </aside>
         </div>
+        {showWalletModal && (
+          <WalletModal
+            privateKey={privateKey}
+            walletAddress={walletAddress}
+            setShowWalletModal={setShowWalletModal}
+          />
+        )}
       </div>
     </div>
   );
